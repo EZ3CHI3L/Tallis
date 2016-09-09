@@ -1,0 +1,27 @@
+#Object files
+*.o
+
+#swp files
+*.swp
+
+#Executable
+tallis
+
+#Autotools stuff
+Makefile.in
+Makefile
+*.Po
+config.*
+autom4te.cache
+aclocal.m4
+compile
+configure
+depcomp
+install-sh
+missing
+stamp-h1
+config.h
+config.h.in
+ltmain.sh
+libtool
+m4/
