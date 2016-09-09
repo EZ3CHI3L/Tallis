@@ -1,6 +1,6 @@
 Tallis
 =======
-Tallis is an IRC bot with TLS support
+Tallis is an IRC bot with TLS and SASL support
 
 TODO
 ====
