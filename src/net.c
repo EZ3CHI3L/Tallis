@@ -168,27 +168,15 @@ void tallis_parse(tallis_t *tallis, char buf[], int len)
         tallis_send(
                 tallis,
                 1,
-                "AUTHENTICATE AGJvb2dpZXBvcABkaWVtZWlzdGVyc2luZ2Vy\r\n");
+                "AUTHENTICATE " SASL_AUTH_STRING "\r\n");
 
     if (strstr(buf, "SASL authentication successful") != NULL)
         tallis_send(tallis, 1, "CAP END\r\n");
 
-    if (strstr(buf, "MODE tallis :") != NULL)
-        tallis_send(tallis, 1, "JOIN #lainchan\r\n");
-
-    /*
     if (strstr(buf, "~tallis quit") != NULL)
         tallis_shutdown(tallis);
 
-    if (strstr(buf, "~tallis about") != NULL)
-        tallis_send(
-                tallis,
-                1,
-                "PRIVMSG #lainchan :\
-                I am tallis, I was written in C and I use TLS\r\n");
-    */
-
-    lexer_analyze(buf);
+    /* lexer_analyze(buf); */
 }
 
 int tallis_loop(tallis_t *tallis)

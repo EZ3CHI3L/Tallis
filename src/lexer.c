@@ -3,9 +3,7 @@
 
 int lexer_analyze(char *input)
 {
-    symbol_table sym = lexer_tokenize(input);
-    for(int i = 0; i < 6; ++i)
-        printf("%d\n", sym);
+    /* symbol_table sym = lexer_tokenize(input); */
     return 0;
 }
 

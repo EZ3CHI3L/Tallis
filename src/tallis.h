@@ -1,5 +1,6 @@
 #ifndef TALLIS_H
 #define TALLIS_H
+#define SASL_AUTH_STRING "dGFsbGlzAHRhbGxpcwBwYXNzd29yZA=="
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 typedef struct tallis_bot_struct
