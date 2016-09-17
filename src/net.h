@@ -7,7 +7,7 @@
 void ssl_init();
 int ssl_shutdown(tallis_t*);
 int tallis_connect(tallis_t*);
-int tallis_verify(tallis_t*);
+int tallis_ssl_verify(tallis_t*);
 int tallis_send(tallis_t*, int, ...);
 int tallis_loop(tallis_t*);
 void tallis_print(char*, ssize_t);

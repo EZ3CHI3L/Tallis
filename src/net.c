@@ -51,27 +51,15 @@ int ssl_shutdown(tallis_t *tallis)
     return 0;
 }
 
-int tallis_verify(tallis_t *tallis)
-{
-    long rv;
-    ERR_clear_error();
-    rv = SSL_get_verify_result(tallis->ssl_connection);
-
-    if (rv != X509_V_OK)
-        return 1;
-
-    return 0;
-}
-
-int tallis_connect(tallis_t *tallis)
+int tallis_ssl_verify(tallis_t *tallis)
 {
     int rv;
 
     ERR_clear_error();
     rv = SSL_CTX_load_verify_locations(
             tallis->ssl_context,
-            NULL,
-            "../certs");
+            "/etc/ssl/certs/UTN_USERFirst_Hardware_Root_CA.pem",
+            "/etc/ssl/certs");
 
     SSL_CTX_set_default_verify_paths(tallis->ssl_context);
 
@@ -88,6 +76,19 @@ int tallis_connect(tallis_t *tallis)
     X509_VERIFY_PARAM_set1_host(tallis->param, tallis->host, 0);
     SSL_CTX_set_verify(tallis->ssl_context, SSL_VERIFY_PEER, NULL);
     SSL_set_verify(tallis->ssl_connection, SSL_VERIFY_PEER, NULL);
+
+    ERR_clear_error();
+    rv = SSL_get_verify_result(tallis->ssl_connection);
+
+    if (rv != X509_V_OK)
+        return 1;
+
+    return 0;
+}
+
+int tallis_connect(tallis_t *tallis)
+{
+   int rv;
 
     ERR_clear_error();
     tallis->bio = BIO_new_ssl_connect(tallis->ssl_context);

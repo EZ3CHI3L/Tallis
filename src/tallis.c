@@ -20,15 +20,17 @@ int main(int argc, char *argv[])
 
     int rv;
 
+    rv = tallis_ssl_verify(tallis);
+
+    if (rv)
+        DIE("%s\n", "certificate verificiation failed");
+    else
+        printf("%s\n", "certificate verification succeeded");
+
     rv = tallis_connect(tallis);
 
     if (rv)
         DIE("%s\n", "connection failed");
-
-    rv = tallis_verify(tallis);
-
-    if (rv)
-        DIE("%s\n", "certificate verificiation failed");
 
     rv = tallis_loop(tallis);
 
