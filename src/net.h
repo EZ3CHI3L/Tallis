@@ -3,11 +3,14 @@
 #include <stdio.h>
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
+#include <openssl/x509v3.h>
 #include "tallis.h"
-void ssl_init();
+void tallis_ssl_init();
 int ssl_shutdown(tallis_t*);
 int tallis_connect(tallis_t*);
-int tallis_ssl_verify(tallis_t*);
+int tallis_init_ssl_verify(tallis_t*);
+int tallis_ssl_verify(tallis_t*, X509*);
+int tallis_verify_cert_chain(tallis_t*, X509*);
 int tallis_send(tallis_t*, int, ...);
 int tallis_loop(tallis_t*);
 void tallis_print(char*, ssize_t);

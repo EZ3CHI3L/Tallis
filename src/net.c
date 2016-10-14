@@ -11,6 +11,7 @@
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/x509v3.h>
+#include <openssl/x509_vfy.h>
 #include <openssl/err.h>
 #include "tallis.h"
 #include "net.h"
@@ -18,9 +19,8 @@
 #include "lexer.h"
 #include "error.h"
 
-void ssl_init()
+void tallis_ssl_init()
 {
-    SSL_load_error_strings();
     SSL_library_init();
 }
 
@@ -51,17 +51,15 @@ int ssl_shutdown(tallis_t *tallis)
     return 0;
 }
 
-int tallis_ssl_verify(tallis_t *tallis)
+int tallis_init_ssl_verify(tallis_t *tallis)
 {
     int rv;
 
     ERR_clear_error();
     rv = SSL_CTX_load_verify_locations(
             tallis->ssl_context,
-            "/etc/ssl/certs/UTN_USERFirst_Hardware_Root_CA.pem",
+            "/etc/ssl/certs/AddTrust_External_Root.pem",
             "/etc/ssl/certs");
-
-    SSL_CTX_set_default_verify_paths(tallis->ssl_context);
 
     if (!rv)
     {
@@ -73,15 +71,112 @@ int tallis_ssl_verify(tallis_t *tallis)
             tallis->param,
             X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
 
-    X509_VERIFY_PARAM_set1_host(tallis->param, tallis->host, 0);
+    ERR_clear_error();
+    rv = X509_VERIFY_PARAM_set_flags(
+            tallis->param,
+            X509_V_FLAG_CRL_CHECK || X509_V_FLAG_CRL_CHECK_ALL);
+
+    if (!rv)
+    {
+        fprintf(stderr, ERR_error_string(ERR_get_error(), NULL));
+        return 1;
+    }
+
+    rv = X509_VERIFY_PARAM_set1_host(tallis->param, tallis->host, 0);
+
+    if (!rv)
+    {
+        fprintf(stderr, ERR_error_string(ERR_get_error(), NULL));
+        return 1;
+    }
+
     SSL_CTX_set_verify(tallis->ssl_context, SSL_VERIFY_PEER, NULL);
     SSL_set_verify(tallis->ssl_connection, SSL_VERIFY_PEER, NULL);
+
+    return 0;
+}
+
+int tallis_ssl_verify(tallis_t *tallis, X509 *cert)
+{
+    int rv;
 
     ERR_clear_error();
     rv = SSL_get_verify_result(tallis->ssl_connection);
 
     if (rv != X509_V_OK)
+    {
+        fprintf(stderr, ERR_error_string(ERR_get_error(), NULL));
         return 1;
+    }
+
+    return 0;
+}
+
+int tallis_verify_cert_chain(tallis_t *tallis, X509 *cert)
+{
+    int rv;
+
+    ERR_clear_error();
+    X509_STORE_CTX *ctx = X509_STORE_CTX_new();
+
+    if (!ctx)
+    {
+        fprintf(stderr, ERR_error_string(ERR_get_error(), NULL));
+        return 1;
+    }
+
+    ERR_clear_error();
+    X509_STORE *store = X509_STORE_new();
+
+    if (!store)
+    {
+        X509_STORE_free(store);
+        fprintf(stderr, ERR_error_string(ERR_get_error(), NULL));
+        return 1;
+    }
+
+    ERR_clear_error();
+    rv = X509_STORE_CTX_init(ctx, store, cert, NULL);
+
+    if (!rv)
+    {
+        X509_STORE_free(store);
+        fprintf(stderr, ERR_error_string(ERR_get_error(), NULL));
+        return 1;
+    }
+
+    X509_STORE_set_flags(store, X509_V_FLAG_CB_ISSUER_CHECK);
+    X509_LOOKUP *lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
+
+    X509_STORE_load_locations(
+            store,
+            "/etc/ssl/certs/AddTrust_External_Root.pem",
+            NULL);
+
+    X509_STORE_set_default_paths(store);
+
+    X509_LOOKUP_load_file(
+            lookup,
+            "/etc/ssl/certs/AddTrust_External_Root.pem",
+            X509_FILETYPE_PEM);
+
+    X509_STORE_add_cert(store, cert);
+
+    ERR_clear_error();
+    rv = X509_verify_cert(ctx);
+
+    if (rv != 1)
+    {
+        fprintf(stderr, "%d\n", rv);
+        X509_STORE_free(store);
+        fprintf(
+                stderr,
+                "%s\n%s\n",
+                ERR_error_string(ERR_get_error(), NULL),
+                X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)));
+
+        return 1;
+    }
 
     return 0;
 }
@@ -106,6 +201,15 @@ int tallis_connect(tallis_t *tallis)
 
     ERR_clear_error();
     rv = BIO_do_connect(tallis->bio);
+
+    if (!rv)
+    {
+        fprintf(stderr, ERR_error_string(ERR_get_error(), NULL));
+        return 1;
+    }
+
+    ERR_clear_error();
+    rv = BIO_do_handshake(tallis->bio);
 
     if (!rv)
     {
