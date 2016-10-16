@@ -38,6 +38,8 @@ int main(int argc, char *argv[])
     if (!cert)
         DIE("%s\n", ERR_error_string(ERR_get_error(), NULL));
 
+    X509_free(cert);
+
     rv = tallis_ssl_verify(tallis, cert);
 
     if (rv)
@@ -45,12 +47,12 @@ int main(int argc, char *argv[])
     else
         printf("%s\n", "certificate verification succeeded");
 
+    /*
     rv = tallis_verify_cert_chain(tallis, cert);
 
     if (rv)
         DIE("%s\n", "failed to verify certificate chain");
-
-    X509_free(cert);
+    */
 
     rv = tallis_loop(tallis);
 
