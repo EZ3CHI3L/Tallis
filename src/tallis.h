@@ -1,6 +1,6 @@
 #ifndef TALLIS_H
 #define TALLIS_H
-#define SASL_AUTH_STRING "dGFsbGlzAHRhbGxpcwBpZnllbG92ZW1l"
+#define SASL_AUTH_STRING "NULL"
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <libconfig.h>

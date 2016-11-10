@@ -263,6 +263,7 @@ void tallis_parse(tallis_t *tallis, char buf[], int len)
     if (strncmp(buf, "PING :", 6) == 0)
         tallis_send(tallis, 1, strncat(pong, buf + 6, len - 6));
 
+    /*
     if (strstr(buf, "CAP * ACK :multi-prefix sasl"))
         tallis_send(tallis, 1, "AUTHENTICATE PLAIN\r\n");
 
@@ -277,6 +278,7 @@ void tallis_parse(tallis_t *tallis, char buf[], int len)
 
     if (strstr(buf, "SASL authentication successful") != NULL)
         tallis_send(tallis, 1, "CAP END\r\n");
+    */
 
     if (strstr(buf, "~tallis quit") != NULL)
         tallis_shutdown(tallis);
@@ -291,8 +293,11 @@ int tallis_loop(tallis_t *tallis)
     const char *nick = "NICK tallis\r\n";
     const char *user = "USER tallis eleison vatican.va :tallis\r\n";
 
+    puts("running with SASL disabled");
+    /*
     if (tallis_check_capability(tallis))
         return 1;
+    */
 
     if (tallis_send(tallis, 2, nick, user))
         return 1;
