@@ -1,15 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <libconfig.h>
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include "tallis.h"
 #include "net.h"
+#include "config.h"
 #include "error.h"
 
 int main(int argc, char *argv[])
 {
+    int rv;
+
     tallis_t *tallis = malloc(sizeof(tallis_t));
+    rv = tallis_parse_config(&tallis->config);
+
+    if (rv)
+        DIE("%s\n", "configuration error");
+
     tallis->host = "irc.freenode.net";
     tallis->port = "6697";
     tallis->bio = NULL;
@@ -18,8 +27,6 @@ int main(int argc, char *argv[])
     tallis->ssl_context = SSL_CTX_new(TLS_method());
     tallis->ssl_connection = SSL_new(tallis->ssl_context);
     tallis->param = SSL_get0_param(tallis->ssl_connection);
-
-    int rv;
 
     rv = tallis_init_ssl_verify(tallis);
 
