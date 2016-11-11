@@ -6,7 +6,7 @@
 #include <openssl/err.h>
 #include "tallis.h"
 #include "net.h"
-#include "config.h"
+#include "conf.h"
 #include "error.h"
 
 int main(int argc, char *argv[])
@@ -14,13 +14,22 @@ int main(int argc, char *argv[])
     int rv;
 
     tallis_t *tallis = malloc(sizeof(tallis_t));
+    config_t config;
     rv = tallis_parse_config(&tallis->config);
 
     if (rv)
         DIE("%s\n", "configuration error");
 
+    rv = config_lookup_string(&tallis->config, "nick",
+            (const char**) &tallis->nick);
+
+    if (!rv)
+        tallis->nick = "tallis";
+
     tallis->host = "irc.freenode.net";
     tallis->port = "6697";
+    tallis->nethost = "eleison";
+    tallis->domain = "vatican.va";
     tallis->bio = NULL;
     tallis->ssl_connection = NULL;
     tallis_ssl_init();

@@ -5,6 +5,7 @@
 #include <pwd.h>
 #include <errno.h>
 #include <libconfig.h>
+#include <conf.h>
 #include "tallis.h"
 #include "error.h"
 

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <inttypes.h>
 #include <string.h>
 #include <errno.h>
@@ -8,6 +9,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <libconfig.h>
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/x509v3.h>
@@ -15,6 +17,7 @@
 #include <openssl/err.h>
 #include "tallis.h"
 #include "net.h"
+#include "conf.h"
 #include "irc.h"
 #include "lexer.h"
 #include "error.h"
@@ -181,6 +184,48 @@ int tallis_verify_cert_chain(tallis_t *tallis, X509 *cert)
     return 0;
 }
 
+int tallis_base64_encode(char *src, int len, char **dest)
+{
+    BIO *bio, *b64;
+    BUF_MEM *bufferPtr;
+
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new(BIO_s_mem());
+    bio = BIO_push(b64, bio);
+
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); //Ignore newlines - write everything in one line
+    BIO_write(bio, src, len);
+    BIO_flush(bio);
+    BIO_get_mem_ptr(bio, &bufferPtr);
+    BIO_set_close(bio, BIO_NOCLOSE);
+    BIO_free_all(bio);
+
+    *dest=(*bufferPtr).data;
+
+    return 0;
+}
+
+int tallis_sasl_authenticate(tallis_t* tallis)
+{
+    int rv, sasl_flag = 0;
+
+    rv = config_lookup_bool(&tallis->config, "sasl", &sasl_flag);
+
+    if (!rv)
+        return 1;
+
+    if (sasl_flag == 0)
+        return 1;
+
+    rv = config_lookup_string(&tallis->config, "sasl_password",
+            &tallis->sasl_password);
+
+    if (!rv)
+        return 1;
+
+    return 0;
+}
+
 int tallis_connect(tallis_t *tallis)
 {
    int rv;
@@ -242,8 +287,10 @@ int tallis_send(tallis_t *tallis, int n, ...)
             puts("retry write?");
         }
 
+        /*
         printf("-->");
         tallis_print((char*) msg, strlen(msg));
+        */
     }
 
     va_end(vargs);
@@ -263,7 +310,6 @@ void tallis_parse(tallis_t *tallis, char buf[], int len)
     if (strncmp(buf, "PING :", 6) == 0)
         tallis_send(tallis, 1, strncat(pong, buf + 6, len - 6));
 
-    /*
     if (strstr(buf, "CAP * ACK :multi-prefix sasl"))
         tallis_send(tallis, 1, "AUTHENTICATE PLAIN\r\n");
 
@@ -273,12 +319,13 @@ void tallis_parse(tallis_t *tallis, char buf[], int len)
     if (strstr(buf, "AUTHENTICATE +") != NULL)
         tallis_send(
                 tallis,
-                1,
-                "AUTHENTICATE " SASL_AUTH_STRING "\r\n");
+                3,
+                "AUTHENTICATE ",
+                tallis->sasl_challenge,
+                "\r\n");
 
     if (strstr(buf, "SASL authentication successful") != NULL)
         tallis_send(tallis, 1, "CAP END\r\n");
-    */
 
     if (strstr(buf, "~tallis quit") != NULL)
         tallis_shutdown(tallis);
@@ -289,17 +336,41 @@ void tallis_parse(tallis_t *tallis, char buf[], int len)
 int tallis_loop(tallis_t *tallis)
 {
     ssize_t len;
-    char buf[512] = {0};
-    const char *nick = "NICK tallis\r\n";
-    const char *user = "USER tallis eleison vatican.va :tallis\r\n";
+    char buf[512] = {0}, initial_message[512];
+    snprintf(initial_message, 512, "%s %s\r\n%s %s %s %s :%s\r\n", "NICK",
+            tallis->nick, "USER", tallis->nick, tallis->nethost,
+            tallis->domain, tallis->nick);
 
-    puts("running with SASL disabled");
     /*
-    if (tallis_check_capability(tallis))
-        return 1;
+     * WRITE A FUCKING PARSER
+    tallis_server_capabilities_t capabilities = {false};
+    tallis_check_capability(tallis, &capabilities, buf);
+    tallis_sasl_authenticate(tallis, buf);
     */
 
-    if (tallis_send(tallis, 2, nick, user))
+    if (!tallis_sasl_authenticate(tallis))
+    {
+        char *temp = malloc(strlen(tallis->nick) * 2 +
+                strlen(tallis->sasl_password) + 3);
+
+        memcpy(temp, tallis->nick, strlen(tallis->nick));
+        temp[strlen(tallis->nick) + 2] = '\0';
+        memcpy(temp + strlen(tallis->nick) + 1,
+                tallis->nick, strlen(tallis->nick) + 1);
+        temp[strlen(tallis->nick) * 2 + 2] = '\0';
+        memcpy(temp + strlen(tallis->nick) * 2 + 2, tallis->sasl_password,
+                strlen(tallis->sasl_password));
+
+        tallis_base64_encode(temp,
+                strlen(temp) * 2 + strlen(tallis->sasl_password) + 2,
+                &tallis->sasl_challenge);
+
+        tallis_send(tallis, 1, "CAP REQ :multi-prefix sasl\r\n");
+    }
+    else
+        puts("running with SASL disabled");
+
+    if (tallis_send(tallis, 1, initial_message))
         return 1;
 
     while (1)
