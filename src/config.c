@@ -23,7 +23,7 @@ int tallis_parse_config(config_t *config)
         return 1;
     }
 
-    const char *conf_dir = "/.tallis/", *conf_file = "tallis.conf.two";
+    const char *conf_dir = "/.tallis/", *conf_file = "tallis.conf";
     int len = strlen(home) + strlen(conf_dir) + strlen(conf_file) + 1;
 
     char tallis_conf_file_path[len];
