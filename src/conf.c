@@ -38,8 +38,7 @@ int tallis_parse_config(config_t *config)
     if (!file)
     {
         perror(NULL);
-        fprintf(stderr, "%s\n", "fopen failed");
-        fclose(file);
+        fprintf(stderr, "%s\n", "couldn't open config");
         return 1;
     }
 

@@ -17,14 +17,22 @@ int main(int argc, char *argv[])
     config_t config;
     rv = tallis_parse_config(&tallis->config);
 
-    if (rv)
-        DIE("%s\n", "configuration error");
-
-    rv = config_lookup_string(&tallis->config, "nick",
+    if (rv == 0) /* 0 means success in my code deal with it */
+    {
+        tallis->has_config = 1;
+        rv = config_lookup_string(&tallis->config, "nick",
             (const char**) &tallis->nick);
 
-    if (!rv)
+        if (!rv)
+            tallis->nick = "tallis";
+    }
+    else
+    {
+        tallis->has_config = 0;
         tallis->nick = "tallis";
+        puts("running with default settings, create ~/.tallis/tallis.conf" \
+                " or fix your syntax");
+    }
 
     tallis->host = "irc.freenode.net";
     tallis->port = "6697";

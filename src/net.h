@@ -11,9 +11,9 @@ int tallis_connect(tallis_t*);
 int tallis_init_ssl_verify(tallis_t*);
 int tallis_ssl_verify(tallis_t*, X509*);
 int tallis_verify_cert_chain(tallis_t*, X509*);
-int tallis_sasl_authenticate(tallis_t*);
+int tallis_get_sasl_password(tallis_t*);
 int tallis_base64_encode(char*, int, char**);
-int tallis_send(tallis_t*, int, ...);
+int tallis_send(tallis_t*, const char*, size_t);
 int tallis_loop(tallis_t*);
 void tallis_print(char*, ssize_t);
 #endif /* NET_H */

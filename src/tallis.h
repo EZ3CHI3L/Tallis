@@ -6,7 +6,8 @@
 #include <libconfig.h>
 typedef struct tallis_bot_struct
 {
-    int sfd;
+    int sfd, has_config, has_sasl;
+    size_t challenge_len;
     BIO *bio;
     SSL *ssl_connection;
     SSL_CTX *ssl_context;

@@ -7,4 +7,5 @@ AC_CONFIG_FILES([Makefile src/Makefile])
 AC_CONFIG_MACRO_DIR([m4])
 PKG_CHECK_MODULES([LIBSSL], [libssl >= 1.1])
 PKG_CHECK_MODULES([OPENSSL], [openssl >= 1.1])
+PKG_CHECK_MODULES([LIBCONFIG], [libconfig >= 1.5])
 AC_OUTPUT
