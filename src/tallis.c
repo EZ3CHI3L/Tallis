@@ -14,30 +14,12 @@ int main(int argc, char *argv[])
     int rv;
 
     tallis_t *tallis = malloc(sizeof(tallis_t));
-    config_t config;
-    rv = tallis_parse_config(&tallis->config);
-
-    if (rv == 0) /* 0 means success in my code deal with it */
-    {
-        tallis->has_config = 1;
-        rv = config_lookup_string(&tallis->config, "nick",
-            (const char**) &tallis->nick);
-
-        if (!rv)
-            tallis->nick = "tallis";
-    }
-    else
-    {
-        tallis->has_config = 0;
-        tallis->nick = "tallis";
-        puts("running with default settings, create ~/.tallis/tallis.conf" \
-                " or fix your syntax");
-    }
-
-    tallis->host = "irc.freenode.net";
-    tallis->port = "6697";
+    tallis->nick = "tallis";
+    tallis->remote_host = "irc.freenode.net";
+    tallis->remote_port = "6697";
     tallis->nethost = "eleison";
     tallis->domain = "vatican.va";
+    tallis->sasl_challenge_len = 0;
     tallis->bio = NULL;
     tallis->ssl_connection = NULL;
     tallis_ssl_init();
@@ -45,14 +27,30 @@ int main(int argc, char *argv[])
     tallis->ssl_connection = SSL_new(tallis->ssl_context);
     tallis->param = SSL_get0_param(tallis->ssl_connection);
 
+    /* uses 1 internal malloc ¯\_(ツ)_/¯ */
+    char *tallis_conf_path = tallis_set_conf_path();
+
+    if (tallis_conf_path != NULL)
+    {
+        rv = tallis_parse_config(&tallis->settings.config, tallis_conf_path);
+        free(tallis_conf_path);
+
+        if (rv != CONFIG_TRUE)
+            tallis_config_fail(tallis);
+        else if (rv == CONFIG_TRUE)
+            tallis->settings.has_config = 1;
+    }
+    else if (tallis_conf_path == NULL)
+        tallis_config_fail(tallis);
+
     rv = tallis_init_ssl_verify(tallis);
 
-    if (rv)
+    if (!rv)
         DIE("%s\n", "error initializing ssl verification data");
 
     rv = tallis_connect(tallis);
 
-    if (rv)
+    if (!rv)
         DIE("%s\n", "connection failed");
 
     ERR_clear_error();
@@ -66,26 +64,19 @@ int main(int argc, char *argv[])
 
     rv = tallis_ssl_verify(tallis, cert);
 
-    if (rv)
+    if (!rv)
         DIE("%s\n", "certificate verificiation failed");
     else
         printf("%s\n", "certificate verification succeeded");
 
-    /*
-    rv = tallis_verify_cert_chain(tallis, cert);
-
-    if (rv)
-        DIE("%s\n", "failed to verify certificate chain");
-    */
-
     rv = tallis_loop(tallis);
 
-    if (rv)
+    if (!rv)
         DIE("%s\n", "socket connection terminated");
 
     rv = ssl_shutdown(tallis);
 
-    if (rv)
+    if (!rv)
         DIE("%s\n", "ssl shutdown failed");
 }
 
