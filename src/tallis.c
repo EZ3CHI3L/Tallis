@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
     tallis->remote_port = "6697";
     tallis->nethost = "eleison";
     tallis->domain = "vatican.va";
+    tallis->sasl_password = NULL;
     tallis->sasl_challenge_len = 0;
     tallis->bio = NULL;
     tallis->ssl_connection = NULL;
@@ -42,6 +43,8 @@ int main(int argc, char *argv[])
     }
     else if (tallis_conf_path == NULL)
         tallis_config_fail(tallis);
+
+    tallis_check_sasl(tallis);
 
     rv = tallis_init_ssl_verify(tallis);
 

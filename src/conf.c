@@ -9,15 +9,26 @@
 #include "tallis.h"
 #include "error.h"
 
+int tallis_check_sasl(tallis_t *tallis)
+{
+    int rv = config_lookup_bool(&tallis->settings.config, "sasl",
+            &tallis->settings.has_sasl);
+
+    if (!rv)
+        return 0;
+
+    return 1;
+}
+
 int tallis_get_sasl_password(tallis_t* tallis)
 {
     int rv = config_lookup_string(&tallis->settings.config, "sasl_password",
             &tallis->sasl_password);
 
-    if (!rv)
+    if (rv && tallis->sasl_password != NULL)
+        tallis->settings.has_sasl_password = 1;
+    else
         return 0;
-
-    tallis->settings.has_sasl = 1;
 
     return 1;
 }

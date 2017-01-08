@@ -6,7 +6,7 @@
 typedef struct tallis_config_settings_struct
 {
     config_t config;
-    int has_config, has_nick, has_sasl;
+    int has_config, has_nick, has_sasl, has_sasl_password;
 } settings_t;
 
 typedef struct tallis_bot_struct

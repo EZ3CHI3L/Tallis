@@ -275,9 +275,11 @@ int tallis_loop(tallis_t *tallis)
     if (!tallis_get_sasl_password(tallis))
         tallis->settings.has_sasl = 0;
 
-    if (!tallis->settings.has_config || !tallis->settings.has_sasl)
+    if (!tallis->settings.has_config || !tallis->settings.has_sasl ||
+            !tallis->settings.has_sasl_password)
         puts("running with SASL disabled");
-    else if (tallis->settings.has_config && tallis->settings.has_sasl)
+    else if (tallis->settings.has_config && tallis->settings.has_sasl &&
+            tallis->settings.has_sasl_password)
     {
         size_t nicklen = strlen(tallis->nick),
                passlen = strlen(tallis->sasl_password);
