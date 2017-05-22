@@ -331,7 +331,7 @@ int tallis_loop(tallis_t *tallis)
             puts("retry read?");
         }
 
-        buf[bytes_read - 1] = '\0';
+        buf[bytes_read] = '\0';
         tallis_print(buf, bytes_read);
         tallis_parse(tallis, buf, bytes_read);
     }
