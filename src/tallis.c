@@ -28,23 +28,25 @@ int main(int argc, char *argv[])
     tallis->ssl_connection = SSL_new(tallis->ssl_context);
     tallis->param = SSL_get0_param(tallis->ssl_connection);
 
-    /* uses 1 internal malloc ¯\_(ツ)_/¯ */
-    char *tallis_conf_path = tallis_set_conf_path();
+    /* uses 1 internal malloc ¯\_(ツ)_/¯  */
+    char *tallis_conf_path = NULL;
+    tallis_conf_path = tallis_set_conf_path();
 
     if (tallis_conf_path != NULL)
     {
         rv = tallis_parse_config(&tallis->settings.config, tallis_conf_path);
         free(tallis_conf_path);
 
-        if (rv != CONFIG_TRUE)
+        if (!rv)
             tallis_config_fail(tallis);
-        else if (rv == CONFIG_TRUE)
+        else if (rv)
             tallis->settings.has_config = 1;
     }
     else if (tallis_conf_path == NULL)
         tallis_config_fail(tallis);
 
-    tallis_check_sasl(tallis);
+    if (tallis->settings.has_config)
+        tallis_check_sasl(tallis);
 
     rv = tallis_init_ssl_verify(tallis);
 
@@ -81,9 +83,13 @@ int main(int argc, char *argv[])
 
     if (!rv)
         DIE("%s\n", "ssl shutdown failed");
+
+    return EXIT_SUCCESS;
 }
 
 _Noreturn void tallis_shutdown(tallis_t* tallis)
 {
-    exit(ssl_shutdown(tallis));
+    int code = ssl_shutdown(tallis);
+    free(tallis);
+    exit(code);
 }

@@ -45,13 +45,13 @@ int ssl_shutdown(tallis_t *tallis)
 
         fprintf(stderr, "%s\n", SSL_state_string(tallis->ssl_connection));
 
-        return 0;
+        return 1;
     }
 
     ERR_free_strings();
     SSL_free(tallis->ssl_connection);
     SSL_CTX_free(tallis->ssl_context);
-    return 1;
+    return 0;
 }
 
 int tallis_init_ssl_verify(tallis_t *tallis)
@@ -250,6 +250,20 @@ void tallis_parse(tallis_t *tallis, char buf[], int len)
         tallis_send(tallis, cap_end_msg, msg_len);
     }
 
+    if (strstr(buf, "MODE tallis") != NULL)
+    {
+        const char *join_msg = "JOIN #tallistestchannel\r\n";
+        msg_len = strlen(join_msg);
+        tallis_send(tallis, join_msg, msg_len);
+    }
+
+    if (strstr(buf, "~tallis help") != NULL)
+    {
+        const char *kok_msg = "PRIVMSG #tallistestchannel :KOK\r\n";
+        msg_len = strlen(kok_msg);
+        tallis_send(tallis, kok_msg, msg_len);
+    }
+
     if (strstr(buf, "~tallis quit") != NULL)
         tallis_shutdown(tallis);
 
@@ -266,14 +280,14 @@ int tallis_loop(tallis_t *tallis)
             tallis->domain, tallis->nick);
 
     /*
-     * WRITE A FUCKING PARSER
+    WRITE A FUCKING PARSER
     tallis_server_capabilities_t capabilities = {false};
     tallis_check_capability(tallis, &capabilities, buf);
     tallis_sasl_authenticate(tallis, buf);
     */
 
-    if (!tallis_get_sasl_password(tallis))
-        tallis->settings.has_sasl = 0;
+    if (tallis->settings.has_config)
+        tallis->settings.has_sasl_password = tallis_get_sasl_password(tallis);
 
     if (!tallis->settings.has_config || !tallis->settings.has_sasl ||
             !tallis->settings.has_sasl_password)
@@ -283,9 +297,7 @@ int tallis_loop(tallis_t *tallis)
     {
         size_t nicklen = strlen(tallis->nick),
                passlen = strlen(tallis->sasl_password);
-
         int len = nicklen + 1 + nicklen + 1 + passlen;
-
         char *temp = malloc(len);
 
         memcpy(temp, tallis->nick, nicklen);
@@ -319,7 +331,7 @@ int tallis_loop(tallis_t *tallis)
             puts("retry read?");
         }
 
-        buf[bytes_read] = '\0';
+        buf[bytes_read - 1] = '\0';
         tallis_print(buf, bytes_read);
         tallis_parse(tallis, buf, bytes_read);
     }

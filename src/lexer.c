@@ -4,7 +4,7 @@
 int lexer_analyze(char *input)
 {
     /* symbol_table sym = lexer_tokenize(input); */
-    return 0;
+    return 1;
 }
 
 symbol_table lexer_tokenize(char *input)
